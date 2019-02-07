@@ -1,0 +1,14 @@
+<resources>
+	<string name="app_name">MLKitDemo</string>
+	<string name="btn_pick_photo">Pick photo</string>
+	<string name="btn_take_photo">Take photo</string>
+	<string name="btn_label_detection">Detect labels</string>
+	<string name="btn_text_recognition">Recognize text</string>
+	<string name="btn_barcode_scanning">Scan barcode</string>
+	<string name="btn_face_detection">Detect faces</string>
+	<string name="error_no_labels">No labels detected!</string>
+	<string name="error_no_faces">No faces detected!</string>
+	<string name="error_no_barcodes">No barcodes detected!</string>
+	<string name="error_no_text">No text detected!</string>
+	<string name="error_unknown">Ooops, something has happened!</string>
+</resources>
