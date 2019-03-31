@@ -7,10 +7,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.abaffym.mlkitdemo.bitmapprocessor.BarcodeBitmapProcessor
 import com.abaffym.mlkitdemo.bitmapprocessor.FaceDetectionBitmapProcessor
+import com.abaffym.mlkitdemo.bitmapprocessor.LabelDetectionBitmapProcessor
 import com.abaffym.mlkitdemo.bitmapprocessor.TextRecognitionBitmapProcessor
 import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import com.google.firebase.ml.vision.face.FirebaseVisionFace
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel
+import com.google.firebase.ml.vision.text.FirebaseVisionText
 
 private const val TAG = "MainViewModel"
 
@@ -21,7 +26,7 @@ sealed class Error {
 
 sealed class Result {
 	object Progress : Result()
-	data class Success(val bitmap: Bitmap? = null, val text: String?) : Result()
+	data class Success(val bitmap: Bitmap? = null) : Result()
 	data class Fail(val error: Error) : Result()
 }
 
@@ -76,15 +81,24 @@ class MainViewModel : ViewModel() {
 
 		val image = FirebaseVisionImage.fromBitmap(bitmap)
 
-		val detector = FirebaseVision.getInstance().onDeviceTextRecognizer
+		val textRecognizer = FirebaseVision.getInstance().onDeviceTextRecognizer
 
-		detector.processImage(image)
-			.addOnSuccessListener { firebaseVisionText ->
+		textRecognizer.processImage(image)
+			.addOnSuccessListener { text: FirebaseVisionText ->
+				text.textBlocks.forEach { textBlocks ->
+					textBlocks.lines.forEach { lines ->
+						lines.elements.forEach { element ->
+							element.text
+							element.confidence
+							element.recognizedLanguages
+							element.boundingBox
+						}
+					}
+				}
 				// Task completed successfully
-				if (firebaseVisionText.text.isNotEmpty()) {
-					val resultBitmap = TextRecognitionBitmapProcessor().drawBoundingBoxes(bitmap, firebaseVisionText)
-					val resultText = firebaseVisionText.text
-					_result.value = Result.Success(bitmap = resultBitmap, text = resultText)
+				if (text.text.isNotEmpty()) {
+					val resultBitmap = TextRecognitionBitmapProcessor().draw(bitmap, text)
+					_result.value = Result.Success(bitmap = resultBitmap)
 				} else {
 					_result.value = Result.Fail(Error.ResError(R.string.error_no_text))
 				}
@@ -106,15 +120,14 @@ class MainViewModel : ViewModel() {
 
 		val image = FirebaseVisionImage.fromBitmap(bitmap)
 
-		val detector = FirebaseVision.getInstance().visionBarcodeDetector
+		val barcodeDetector = FirebaseVision.getInstance().visionBarcodeDetector
 
-		detector.detectInImage(image)
-			.addOnSuccessListener { firebaseVisionBarcodes ->
+		barcodeDetector.detectInImage(image)
+			.addOnSuccessListener { barcodes: List<FirebaseVisionBarcode> ->
 				// Task completed successfully
-				if (firebaseVisionBarcodes.isNotEmpty()) {
-					val resultBitmap = BarcodeBitmapProcessor().drawBoundingBoxes(bitmap, firebaseVisionBarcodes)
-					val resultText = firebaseVisionBarcodes.joinToString(",") { it.displayValue.toString() }
-					_result.value = Result.Success(bitmap = resultBitmap, text = resultText)
+				if (barcodes.isNotEmpty()) {
+					val resultBitmap = BarcodeBitmapProcessor().drawBoundingBoxes(bitmap, barcodes)
+					_result.value = Result.Success(bitmap = resultBitmap)
 				} else {
 					_result.value = Result.Fail(Error.ResError(R.string.error_no_barcodes))
 				}
@@ -140,18 +153,18 @@ class MainViewModel : ViewModel() {
 			.setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
 			.setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
 			.setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
+			.setContourMode(FirebaseVisionFaceDetectorOptions.ALL_CONTOURS)
 			.enableTracking()
 			.build()
 
-		val detector = FirebaseVision.getInstance().getVisionFaceDetector(options)
+		val faceDetector = FirebaseVision.getInstance().getVisionFaceDetector(options)
 
-		detector.detectInImage(image)
-			.addOnSuccessListener { firebaseVisionFaces ->
+		faceDetector.detectInImage(image)
+			.addOnSuccessListener { faces: List<FirebaseVisionFace> ->
 				// Task completed successfully
-				if (firebaseVisionFaces.isNotEmpty()) {
-					val bitmapResult = FaceDetectionBitmapProcessor().drawBoundingBoxes(bitmap, firebaseVisionFaces)
-					val resultText = firebaseVisionFaces.joinToString("\n") { "${it.trackingId} ${it.smilingProbability}" }
-					_result.value = Result.Success(bitmap = bitmapResult, text = resultText)
+				if (faces.isNotEmpty()) {
+					val bitmapResult = FaceDetectionBitmapProcessor().draw(bitmap, faces)
+					_result.value = Result.Success(bitmap = bitmapResult)
 				} else {
 					_result.value = Result.Fail(Error.ResError(R.string.error_no_faces))
 				}
@@ -172,14 +185,19 @@ class MainViewModel : ViewModel() {
 	private fun doLabelDetection(bitmap: Bitmap) {
 
 		val image = FirebaseVisionImage.fromBitmap(bitmap)
-		val detector = FirebaseVision.getInstance().onDeviceImageLabeler
+		val imageLabeler = FirebaseVision.getInstance().onDeviceImageLabeler
 
-		detector.processImage(image)
-			.addOnSuccessListener { firebaseVisionLabels ->
+		imageLabeler.processImage(image)
+			.addOnSuccessListener { labels: List<FirebaseVisionImageLabel> ->
+				labels.forEach { label: FirebaseVisionImageLabel ->
+					label.text
+					label.confidence
+					label.entityId
+				}
 				// Task completed successfully
-				if (firebaseVisionLabels.isNotEmpty()) {
-					val resultText = firebaseVisionLabels.joinToString(separator = "\n") { "${it.text} : ${it.confidence}" }
-					_result.value = Result.Success(text = resultText)
+				if (labels.isNotEmpty()) {
+					val bitmapResult = LabelDetectionBitmapProcessor().draw(bitmap, labels)
+					_result.value = Result.Success(bitmap = bitmapResult)
 				} else {
 					_result.value = Result.Fail(Error.ResError(R.string.error_no_text))
 				}

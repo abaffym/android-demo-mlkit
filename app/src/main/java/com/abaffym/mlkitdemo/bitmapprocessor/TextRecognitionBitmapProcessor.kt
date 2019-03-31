@@ -10,23 +10,47 @@ import com.google.firebase.ml.vision.text.FirebaseVisionText
 
 class TextRecognitionBitmapProcessor {
 
-	fun drawBoundingBoxes(bitmap: Bitmap, visionText: FirebaseVisionText): Bitmap {
-		val temporaryBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+    private val rectPaint = Paint().apply {
+        color = TEXT_COLOR
+        style = Paint.Style.STROKE
+        strokeWidth = STROKE_WIDTH
+    }
 
-		val canvas = Canvas(temporaryBitmap)
-		canvas.drawBitmap(bitmap, 0f, 0f, null)
+    private val textPaint = Paint().apply {
+        color = TEXT_COLOR
+        textSize = TEXT_SIZE
+    }
 
-		for (text in visionText.textBlocks) {
-			canvas.withSave {
-				drawRoundRect(RectF(text.boundingBox), 0f, 0f, rectPaint)
-			}
-		}
-		return temporaryBitmap
-	}
+    fun draw(bitmap: Bitmap, visionText: FirebaseVisionText): Bitmap {
+        val temporaryBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
 
-	private val rectPaint = Paint().apply {
-		strokeWidth = 5f
-		color = Color.CYAN
-		style = Paint.Style.STROKE
-	}
+        val canvas = Canvas(temporaryBitmap)
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
+
+       visionText.textBlocks.forEach {blocks ->
+            blocks.lines.forEach { line ->
+                canvas.withSave {
+                    drawBoundingBox(canvas, line)
+                    drawText(canvas, line)
+                }
+            }
+        }
+        return temporaryBitmap
+    }
+
+    private fun drawBoundingBox(canvas: Canvas, text: FirebaseVisionText.Line) {
+        canvas.drawRoundRect(RectF(text.boundingBox), 0f, 0f, rectPaint)
+    }
+
+    private fun drawText(canvas: Canvas, text: FirebaseVisionText.Line) {
+        canvas.drawText(text.text, text.boundingBox!!.left.toFloat(), text.boundingBox!!.bottom.toFloat(), textPaint)
+    }
+
+
+    companion object {
+        private const val TEXT_COLOR = Color.RED
+        private const val TEXT_SIZE = 140.0f
+        private const val STROKE_WIDTH = 12.0f
+    }
+
 }

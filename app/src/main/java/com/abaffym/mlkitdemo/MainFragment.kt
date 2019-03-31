@@ -15,7 +15,6 @@ import kotlinx.android.synthetic.main.fragment_main.btn_pick_photo
 import kotlinx.android.synthetic.main.fragment_main.iv_photo
 import kotlinx.android.synthetic.main.fragment_main.progress_container
 import kotlinx.android.synthetic.main.fragment_main.spinner_feature
-import kotlinx.android.synthetic.main.fragment_main.tv_result
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProviders
@@ -117,17 +116,14 @@ class MainFragment : Fragment() {
 		is Result.Progress -> {
 			progress_container.visibility = View.VISIBLE
 			iv_photo.setImageBitmap(null)
-			tv_result.text = null
 		}
 		is Result.Success -> {
 			progress_container.visibility = View.GONE
 			iv_photo.setImageBitmap(result.bitmap ?: viewModel.bitmap.value)
-			tv_result.text = result.text
 		}
 		is Result.Fail -> {
 			progress_container.visibility = View.GONE
 			iv_photo.setImageBitmap(viewModel.bitmap.value)
-			tv_result.text = null
 			val errorMessage = when (result.error) {
 				is Error.StringError -> result.error.message
 				is Error.ResError -> getString(result.error.errorId)

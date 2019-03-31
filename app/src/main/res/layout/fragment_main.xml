@@ -25,18 +25,7 @@
 		app:layout_constraintStart_toStartOf="@id/keyline_start"
 		app:layout_constraintEnd_toEndOf="@id/keyline_end"
 		app:layout_constraintTop_toBottomOf="@id/spinner_feature"
-		app:layout_constraintBottom_toTopOf="@id/tv_result" />
-
-	<TextView
-		android:id="@+id/tv_result"
-		android:layout_width="0dp"
-		android:layout_height="wrap_content"
-		android:layout_marginBottom="16dp"
-		android:textSize="12sp"
-		app:layout_constraintStart_toStartOf="@id/keyline_start"
-		app:layout_constraintEnd_toEndOf="@id/keyline_end"
-		app:layout_constraintBottom_toTopOf="@id/btn_pick_photo"
-		app:layout_constraintTop_toBottomOf="@id/iv_photo" />
+		app:layout_constraintBottom_toTopOf="@id/btn_pick_photo" />
 
 	<Button
 		android:id="@+id/btn_pick_photo"
